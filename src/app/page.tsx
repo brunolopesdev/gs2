@@ -120,7 +120,7 @@ export default function Home() {
                 <Card>
                   <CardContent className="p-6">
                     <p className="mb-4">
-                      "Desde que implementamos o sistema da EnergiaSmart, nossa fábrica reduziu o consumo de energia em 35%. O retorno sobre o investimento foi impressionante!"
+                      "Desde que implementamos o sistema da Energet, nossa fábrica reduziu o consumo de energia em 35%. O retorno sobre o investimento foi impressionante!"
                     </p>
                     <p className="font-semibold">Maria Silva, Gerente Industrial</p>
                   </CardContent>
@@ -159,7 +159,7 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div>
-              <h3 className="text-lg font-semibold mb-4 text-foreground">EnergiaSmart</h3>
+              <h3 className="text-lg font-semibold mb-4 text-foreground">Energet</h3>
               <p className="text-muted-foreground">Transformando o consumo de energia com tecnologia inteligente.</p>
             </div>
             <div>
@@ -201,12 +201,12 @@ export default function Home() {
             </div>
             <div>
               <h3 className="text-lg font-semibold mb-4 text-foreground">Contate-nos</h3>
-              <p className="text-muted-foreground">Email: info@energiasmart.com</p>
+              <p className="text-muted-foreground">Email: info@Energet.com</p>
               <p className="text-muted-foreground">Telefone: (11) 1234-5678</p>
             </div>
           </div>
           <div className="mt-8 text-center border-t border-border pt-8">
-            <p className="text-muted-foreground">&copy; 2024 EnergiaSmart. Todos os direitos reservados.</p>
+            <p className="text-muted-foreground">&copy; 2024 Energet. Todos os direitos reservados.</p>
           </div>
         </div>
       </footer>

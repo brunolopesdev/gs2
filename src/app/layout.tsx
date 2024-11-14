@@ -4,7 +4,7 @@ import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
-  title: "EnergiaSmart - Economia de Energia Inteligente",
+  title: "Energet - Economia de Energia Inteligente",
   description: "Reduza seu consumo energético com tecnologia inteligente",
 };
 

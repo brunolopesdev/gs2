@@ -6,12 +6,14 @@ export interface Message {
   isQuestion?: boolean;
 }
 
+export interface Option {
+  id: string;
+  text: string;
+  response: string;
+}
+
 export interface PreDefinedQuestion {
   id: string;
   question: string;
-  options: {
-    id: string;
-    text: string;
-    response: string;
-  }[];
+  options: Option[];
 } 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, KeyboardEvent, ChangeEvent } from 'react';
 import { Message } from '../types';
 import ChatMessage from './ChatMessage';
 import PreDefinedQuestions from './PreDefinedQuestions';
@@ -10,12 +10,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Send, RefreshCw } from 'lucide-react';
-import { generateResponse } from '@/lib/ai'
 
 export default function ChatInterface() {
   const [messages, setMessages] = useLocalStorage<Message[]>('chat-messages', []);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [input, setInput] = useState('');
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+  const [input, setInput] = useState<string>('');
 
   const handleSend = async () => {
     if (!input.trim()) return;
@@ -38,41 +37,49 @@ export default function ChatInterface() {
     setInput('');
   };
 
-  const handleOptionSelect = async (text: string) => {
+  const handleOptionSelect = (text: string, response: string) => {
     const questionMessage: Message = {
       id: uuidv4(),
       content: predefinedQuestions[currentQuestionIndex].question,
       role: 'assistant',
       timestamp: new Date(),
       isQuestion: true
-    }
+    };
 
     const userMessage: Message = {
       id: uuidv4(),
       content: text,
       role: 'user',
       timestamp: new Date()
-    }
-
-    const aiResponse = await generateResponse(text)
+    };
 
     const botMessage: Message = {
       id: uuidv4(),
-      content: aiResponse,
+      content: response,
       role: 'assistant',
       timestamp: new Date()
-    }
+    };
 
-    setMessages(prev => [...prev, questionMessage, userMessage, botMessage])
+    setMessages(prev => [...prev, questionMessage, userMessage, botMessage]);
     
     if (currentQuestionIndex < predefinedQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1)
+      setCurrentQuestionIndex(prev => prev + 1);
     }
-  }
+  };
 
   const handleReset = () => {
     setMessages([]);
     setCurrentQuestionIndex(0);
+  };
+
+  const handleKeyPress = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      handleSend();
+    }
+  };
+
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setInput(e.target.value);
   };
 
   return (
@@ -95,12 +102,15 @@ export default function ChatInterface() {
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={handleInputChange}
+            onKeyPress={handleKeyPress}
             placeholder="Digite sua mensagem..."
             className="flex-1 p-2 border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-green-500"
-            onKeyPress={(e) => e.key === 'Enter' && handleSend()}
           />
-          <Button onClick={handleSend} className="bg-green-600 hover:bg-green-700 text-white">
+          <Button 
+            onClick={handleSend} 
+            className="bg-green-600 hover:bg-green-700 text-white"
+          >
             <Send className="h-4 w-4" />
           </Button>
         </div>

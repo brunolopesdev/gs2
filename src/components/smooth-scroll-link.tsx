@@ -12,7 +12,6 @@ export function SmoothScrollLink({ href, children, className }: SmoothScrollLink
     const target = document.querySelector(href);
     if (target) {
       target.scrollIntoView({ behavior: 'smooth' });
-      // Atualiza a URL sem recarregar a página
       window.history.pushState({}, '', href);
     }
   };

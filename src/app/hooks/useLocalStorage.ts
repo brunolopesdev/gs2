@@ -3,9 +3,8 @@
 import { useState, useEffect } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
-  // Estado para armazenar o valor
   const [storedValue, setStoredValue] = useState<T>(initialValue);
-  // Inicializa o estado com o valor do localStorage
+
   useEffect(() => {
     const loadValue = () => {
       try {
@@ -20,7 +19,6 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     };
   }, [key, initialValue]);
 
-  // Retorna uma função wrapped para setar o localStorage
   const setValue = (value: T | ((val: T) => T)) => {
     try {
       const valueToStore =

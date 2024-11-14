@@ -59,8 +59,7 @@ const config = {
         sm: "calc(var(--radius) - 4px)",
       },
     },
-  },
-  plugins: [],
-} satisfies Config;
+  }
+} as Config;
 
 export default config;
