@@ -25,4 +25,15 @@ export interface UserProgress {
   questionsAnswered: number;
   level: number;
   badges: string[];
+}
+
+export interface ChatMessage {
+  id: number;
+  questionId: string;
+  selectedOptionId: string;
+  question: string;
+  answer: string;
+  points: number;
+  options: Option[];
+  createdAt: string;
 } 

@@ -1,16 +1,15 @@
 'use client';
 
-import { useState, KeyboardEvent, ChangeEvent } from 'react';
-import { Message, UserProgress } from '../types';
+import { useState, KeyboardEvent, ChangeEvent, useEffect } from 'react';
+import { Message, ChatMessage as ChatMessageType } from "../types";
 import ChatMessage from './ChatMessage';
 import PreDefinedQuestions from './PreDefinedQuestions';
-import { predefinedQuestions } from '../lib/questions';
-import { useLocalStorage } from '../hooks/useLocalStorage';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Send, RefreshCw, Award, Trophy } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
+import { useChatContext } from '../contexts/ChatContext';
 
 const TOTAL_QUESTIONS = 10;
 const POINTS_PER_QUESTION = 10;
@@ -22,16 +21,45 @@ const LEVELS = {
   4: { min: 91, max: MAX_POINTS, title: 'Especialista' }
 };
 
-export default function ChatInterface() {
-  const [messages, setMessages] = useLocalStorage<Message[]>('chat-messages', []);
-  const [currentQuestionIndex, setCurrentQuestionIndex] = useState<number>(0);
+interface ChatInterfaceProps {
+  isFloating?: boolean;
+}
+
+export default function ChatInterface({ isFloating = false }: ChatInterfaceProps) {
+  const { 
+    messages, 
+    setMessages, 
+    userProgress, 
+    setUserProgress,
+    currentQuestionIndex,
+    setCurrentQuestionIndex
+  } = useChatContext();
+  
   const [input, setInput] = useState<string>('');
-  const [userProgress, setUserProgress] = useLocalStorage<UserProgress>('user-progress', {
-    points: 0,
-    questionsAnswered: 0,
-    level: 1,
-    badges: []
-  });
+  const [chatMessages, setChatMessages] = useState<ChatMessageType[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchChatMessages();
+  }, []);
+
+  const fetchChatMessages = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('http://localhost:3000/chat-messages');
+      if (!response.ok) {
+        throw new Error('Falha ao carregar as mensagens');
+      }
+      const data = await response.json();
+      setChatMessages(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Erro ao carregar mensagens');
+      console.error('Erro ao buscar mensagens:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const calculateLevel = (points: number) => {
     return Object.entries(LEVELS).reduce((acc, [level, { min, max }]) => {
@@ -66,24 +94,26 @@ export default function ChatInterface() {
     setInput('');
   };
 
-  const handleOptionSelect = (text: string, response: string) => {
+  const handleOptionSelect = async (text: string, response: string) => {
     if (userProgress.questionsAnswered >= TOTAL_QUESTIONS) return;
 
-    const currentQuestion = predefinedQuestions[currentQuestionIndex];
+    const currentQuestion = chatMessages[currentQuestionIndex];
     const selectedOption = currentQuestion.options.find(opt => opt.text === text);
-    const pointsEarned = selectedOption?.points || POINTS_PER_QUESTION;
+    
+    if (!selectedOption) return;
 
+    const pointsEarned = selectedOption.points;
     const newPoints = userProgress.points + pointsEarned;
     const newQuestionsAnswered = userProgress.questionsAnswered + 1;
     const newLevel = calculateLevel(newPoints);
     const newBadges = checkForNewBadges(newPoints, newQuestionsAnswered);
 
-    setUserProgress(prev => ({
+    setUserProgress({
       points: newPoints,
       questionsAnswered: newQuestionsAnswered,
       level: newLevel,
       badges: newBadges
-    }));
+    });
 
     const questionMessage: Message = {
       id: uuidv4(),
@@ -107,15 +137,15 @@ export default function ChatInterface() {
 
     const botMessage: Message = {
       id: uuidv4(),
-      content: `${response}${completionMessage}`,
+      content: `${selectedOption.response}${completionMessage}`,
       role: 'assistant',
       timestamp: new Date()
     };
 
     setMessages(prev => [...prev, questionMessage, userMessage, botMessage]);
     
-    if (currentQuestionIndex < predefinedQuestions.length - 1) {
-      setCurrentQuestionIndex(prev => prev + 1);
+    if (currentQuestionIndex < chatMessages.length - 1) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
     }
   };
 
@@ -149,8 +179,28 @@ export default function ChatInterface() {
 
   const isQuizComplete = userProgress.questionsAnswered >= TOTAL_QUESTIONS;
 
+  if (isLoading) {
+    return (
+      <Card className={`w-full ${isFloating ? 'h-full border-none shadow-none rounded-none' : 'max-w-2xl mx-auto'}`}>
+        <div className="p-4 text-center">
+          Carregando questões...
+        </div>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className={`w-full ${isFloating ? 'h-full border-none shadow-none rounded-none' : 'max-w-2xl mx-auto'}`}>
+        <div className="p-4 text-center text-red-500">
+          {error}
+        </div>
+      </Card>
+    );
+  }
+
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className={`w-full ${isFloating ? 'h-full border-none shadow-none rounded-none' : 'max-w-2xl mx-auto'}`}>
       <div className="p-4 border-b bg-muted/50">
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
@@ -159,7 +209,7 @@ export default function ChatInterface() {
             ) : (
               <Award className="h-5 w-5 text-yellow-500" />
             )}
-            <span className="font-semibold">
+            <span className="font-semibold text-sm">
               {isQuizComplete 
                 ? 'Quiz Completado!' 
                 : `Nível ${userProgress.level} - ${currentLevelInfo?.title}`}
@@ -176,21 +226,30 @@ export default function ChatInterface() {
           <span>{Math.round(progressToNextLevel * 100)}% para o próximo nível</span>
         </div>
       </div>
-      <CardContent className="p-6">
-        <div className="h-[400px] overflow-y-auto mb-4 space-y-4 scroll-smooth">
+      <CardContent className={`p-4 ${isFloating ? 'flex flex-col h-[calc(100%-130px)]' : ''}`}>
+        <div className={`
+          ${isFloating ? 'h-[250px]' : 'h-[400px]'} 
+          overflow-y-auto mb-4 space-y-4 scroll-smooth
+        `}>
           {messages.map((message) => (
             <ChatMessage key={message.id} message={message} />
           ))}
         </div>
 
-        {!isQuizComplete && currentQuestionIndex < predefinedQuestions.length && (
-          <PreDefinedQuestions
-            question={predefinedQuestions[currentQuestionIndex]}
-            onOptionSelect={handleOptionSelect}
-          />
+        {!isQuizComplete && currentQuestionIndex < chatMessages.length && (
+          <div className={`
+            ${isFloating ? 'max-h-[200px] overflow-y-auto pr-2' : ''} 
+            flex-shrink-0 border-t pt-4
+          `}>
+            <PreDefinedQuestions
+              question={chatMessages[currentQuestionIndex]}
+              onOptionSelect={handleOptionSelect}
+              isFloating={isFloating}
+            />
+          </div>
         )}
 
-        <div className="flex gap-2">
+        <div className="flex gap-2 mt-auto pt-4 border-t">
           <input
             type="text"
             value={input}
